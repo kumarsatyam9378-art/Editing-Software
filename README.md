@@ -37,6 +37,12 @@ This repo now includes:
 - Border marketplace categories with scrollable panel
 - CapCut-style video tools matrix panel
 - High-resolution still export (PNG/JPG/WebP presets incl. 4K/8K scaling)
+- Project archive service: schema stamping, asset hashing, backup/version restore endpoints
+- Advanced collab gateway: cursor presence, layer lock, conflict events, live timeline sync
+- Transition packs + marketplace preset packs (transitions/LUT/effects) importable via JSON module
+- GPU preview renderer upgraded with WebGL2 program + framebuffer blit path
+- RenderQueue emits websocket progress events for live export tracking
+- Backend video render engine scaffold (`videoRenderEngine`) with timeline composition plan + audio mixdown plan
 - Dark professional responsive UI
 
 ## Project Structure

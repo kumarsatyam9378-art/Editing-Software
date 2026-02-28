@@ -12,6 +12,7 @@ import KeyframeEngine from '../editor/animation/KeyframeEngine';
 import RenderWorkerClient from '../editor/render/RenderWorkerClient';
 import WaveformEngine from '../editor/audio/WaveformEngine';
 import AudioScrubEngine from '../editor/audio/AudioScrubEngine';
+import AudioMixerEngine from '../editor/audio/AudioMixerEngine';
 
 export default function useEditorEngines({ fps, duration }) {
   return useMemo(() => {
@@ -28,6 +29,7 @@ export default function useEditorEngines({ fps, duration }) {
     const renderWorker = new RenderWorkerClient();
     const waveform = new WaveformEngine();
     const audioScrub = new AudioScrubEngine();
+    const audioMixer = new AudioMixerEngine();
 
     return {
       camera,
@@ -42,7 +44,8 @@ export default function useEditorEngines({ fps, duration }) {
       keyframes,
       renderWorker,
       waveform,
-      audioScrub
+      audioScrub,
+      audioMixer
     };
   }, [fps, duration]);
 }

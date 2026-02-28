@@ -1,4 +1,5 @@
 const Project = require('../models/Project');
+const archive = require('../services/projectArchiveService');
 
 async function listProjects(req, res) {
   const projects = await Project.find({ userId: req.user.userId }).sort({ updatedAt: -1 }).limit(50);
@@ -14,6 +15,7 @@ async function createProject(req, res) {
     exportSettings: req.body.exportSettings || undefined
   });
 
+  archive.saveVersion(project.id, { ...req.body, projectId: project.id });
   return res.status(201).json({ project });
 }
 
@@ -30,6 +32,7 @@ async function upsertProject(req, res) {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
+  archive.saveVersion(project.id, { ...req.body, projectId: project.id });
   return res.status(200).json({ project });
 }
 
@@ -45,4 +48,28 @@ async function createExportJob(req, res) {
   });
 }
 
-module.exports = { listProjects, createProject, upsertProject, createExportJob };
+async function listProjectVersions(req, res) {
+  return res.json({ versions: archive.listVersions(req.params.projectId) });
+}
+
+async function restoreProjectVersion(req, res) {
+  const restored = archive.restore(req.params.projectId, Number(req.body.index || 0));
+  if (!restored) return res.status(404).json({ message: 'Version not found' });
+  return res.json({ restored });
+}
+
+async function getProjectBackup(req, res) {
+  const backup = archive.getBackup(req.params.projectId);
+  if (!backup) return res.status(404).json({ message: 'Backup not found' });
+  return res.json({ backup });
+}
+
+module.exports = {
+  listProjects,
+  createProject,
+  upsertProject,
+  createExportJob,
+  listProjectVersions,
+  restoreProjectVersion,
+  getProjectBackup
+};

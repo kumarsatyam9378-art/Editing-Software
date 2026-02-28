@@ -21,7 +21,8 @@ async function createRenderJob(req, res) {
     fps,
     resolution: preset.resolution,
     bitrate: preset.bitrate,
-    frames: req.body.frames || 240
+    frames: req.body.frames || 240,
+    timeline: req.body.timeline || { tracks: [] }
   });
   return res.status(202).json({ job });
 }

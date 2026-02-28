@@ -10,6 +10,7 @@ import Timeline from '../components/Timeline';
 import Toolbar from '../components/Toolbar';
 import TopBar from '../components/TopBar';
 import VideoToolsPanel from '../components/VideoToolsPanel';
+import PackMarketplace from '../components/PackMarketplace';
 import useEditorStore from '../hooks/useEditorStore';
 import api from '../services/api';
 import { removeGreenScreen, trimVideo } from '../utils/ffmpeg';
@@ -169,6 +170,21 @@ export default function EditorPage() {
     updatedTrack.clips.forEach((clip) => updateClip(clip.id, clip));
   };
 
+
+  const applyPack = (pack) => {
+    if (!selectedClipId) return;
+    if (pack.transitions) updateClip(selectedClipId, { transitionPack: pack.id, transition: pack.transitions[0] });
+    if (pack.effects) updateClip(selectedClipId, { effectPack: pack.id, effects: pack.effects });
+    if (pack.luts) updateClip(selectedClipId, { lutPack: pack.id, lut: pack.luts[0] });
+  };
+
+  const demoAudioMix = () => {
+    const samples = new Float32Array(48000).map((_, i) => Math.sin((i / 48000) * Math.PI * 16));
+    engines.audioMixer.mixdown([
+      { samples, options: { durationSec: 1, fadeInSec: 0.1, fadeOutSec: 0.15, lowGain: 1.1, midGain: 0.95, highGain: 1.05, volumeKeyframes: [{ time: 0, value: 0.7 }, { time: 0.5, value: 1 }, { time: 1, value: 0.8 }] } }
+    ]);
+  };
+
   const setOpacityKeyframe = () => {
     if (!selectedClipId) return;
     engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
@@ -250,6 +266,7 @@ export default function EditorPage() {
               <button type="button" onClick={setOpacityKeyframe}>Set Opacity Keyframes</button>
               <button type="button" onClick={() => exportStill('4k', 'image/png')}>Save PNG 4K</button>
               <button type="button" onClick={() => exportStill('8k', 'image/webp')}>Save WebP 8K</button>
+              <button type="button" onClick={demoAudioMix}>Audio Mix Demo</button>
             </div>
             <p>Background Render Progress: {renderProgress}%</p>
             {previewUrl && <video ref={previewVideoRef} src={previewUrl} controls className="trim-preview" />}
@@ -257,6 +274,7 @@ export default function EditorPage() {
           <div className="panel-stack">
             <InspectorPanel />
             <VideoToolsPanel />
+            <PackMarketplace onApplyPack={applyPack} />
           </div>
         </div>
         <Timeline />
