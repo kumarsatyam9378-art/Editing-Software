@@ -9,16 +9,12 @@ export default function PricingPage() {
     api.get('/subscriptions/plans').then((response) => setPlans(response.data.plans)).catch(() => setPlans([]));
   }, []);
 
-  const checkout = async (planId) => {
-    const { data } = await api.post('/subscriptions/checkout', { planPriceId: planId });
-    window.open(data.url, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <div className="layout">
       <Sidebar />
       <main className="content">
         <h1>Subscription Plans</h1>
+        <p>Login removed for now. Plans visible publicly; checkout API can be re-enabled with auth later.</p>
         <section className="pricing-grid">
           {plans.map((plan) => (
             <article key={plan.id} className="plan-card">
@@ -27,7 +23,7 @@ export default function PricingPage() {
               <ul>
                 {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
               </ul>
-              <button type="button" onClick={() => checkout(plan.id)}>Choose {plan.name}</button>
+              <button type="button" disabled>Checkout Coming Soon</button>
             </article>
           ))}
         </section>

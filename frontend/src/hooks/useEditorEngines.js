@@ -10,6 +10,8 @@ import TextLayoutEngine from '../editor/image/TextLayoutEngine';
 import FrameCache from '../editor/video/FrameCache';
 import KeyframeEngine from '../editor/animation/KeyframeEngine';
 import RenderWorkerClient from '../editor/render/RenderWorkerClient';
+import WaveformEngine from '../editor/audio/WaveformEngine';
+import AudioScrubEngine from '../editor/audio/AudioScrubEngine';
 
 export default function useEditorEngines({ fps, duration }) {
   return useMemo(() => {
@@ -24,6 +26,8 @@ export default function useEditorEngines({ fps, duration }) {
     const frameCache = new FrameCache(240);
     const keyframes = new KeyframeEngine();
     const renderWorker = new RenderWorkerClient();
+    const waveform = new WaveformEngine();
+    const audioScrub = new AudioScrubEngine();
 
     return {
       camera,
@@ -36,7 +40,9 @@ export default function useEditorEngines({ fps, duration }) {
       text,
       frameCache,
       keyframes,
-      renderWorker
+      renderWorker,
+      waveform,
+      audioScrub
     };
   }, [fps, duration]);
 }

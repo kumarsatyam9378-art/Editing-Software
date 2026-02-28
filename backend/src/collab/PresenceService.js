@@ -2,6 +2,8 @@ class PresenceService {
   constructor() {
     this.rooms = new Map();
     this.versions = new Map();
+    this.comments = new Map();
+    this.snapshots = new Map();
   }
 
   join(roomId, user) {
@@ -32,6 +34,28 @@ class PresenceService {
 
   getVersions(projectId) {
     return this.versions.get(projectId) || [];
+  }
+
+  addComment(projectId, comment) {
+    if (!this.comments.has(projectId)) this.comments.set(projectId, []);
+    const item = { id: `c_${Date.now()}_${Math.random().toString(16).slice(2,6)}`, createdAt: new Date().toISOString(), ...comment };
+    this.comments.get(projectId).push(item);
+    return item;
+  }
+
+  getComments(projectId) {
+    return this.comments.get(projectId) || [];
+  }
+
+  addSnapshot(projectId, snapshot) {
+    if (!this.snapshots.has(projectId)) this.snapshots.set(projectId, []);
+    const item = { id: `s_${Date.now()}`, createdAt: new Date().toISOString(), ...snapshot };
+    this.snapshots.get(projectId).push(item);
+    return item;
+  }
+
+  getSnapshots(projectId) {
+    return this.snapshots.get(projectId) || [];
   }
 }
 

@@ -31,7 +31,8 @@ This repo now includes:
 - Async render queue API (`/api/renders`) using worker_threads
 - Collaboration scaffolding: WebSocket presence + version history endpoints
 - Vector scaffolding: SVG path parser + path editing + boolean op placeholders
-- Login/signup with JWT
+- Guest-first flow (login/signup temporarily removed from UI)
+- Backend JWT/auth endpoints retained for future secure mode
 - Subscription plans API + Stripe checkout endpoint
 - Dark professional responsive UI
 

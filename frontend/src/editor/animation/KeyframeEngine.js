@@ -1,5 +1,16 @@
 import { solveBezierYForX } from './Bezier';
 
+export const ANIMATABLE_PROPERTIES = [
+  'position.x',
+  'position.y',
+  'scale',
+  'rotation',
+  'opacity',
+  'skew',
+  'color',
+  'volume'
+];
+
 function sortFrames(frames = []) {
   return [...frames].sort((a, b) => a.time - b.time);
 }
@@ -50,6 +61,11 @@ export default class KeyframeEngine {
 
     const range = right.time - left.time;
     const x = (time - left.time) / range;
+
+    if (left.interpolation === 'linear') {
+      return left.value + (right.value - left.value) * x;
+    }
+
     const easing = left.easing || { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1 };
     const curve = solveBezierYForX(x, easing.x1, easing.y1, easing.x2, easing.y2);
     return left.value + (right.value - left.value) * curve;

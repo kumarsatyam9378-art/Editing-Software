@@ -1,13 +1,27 @@
 const renderQueue = require('../services/renderQueueService');
 
+const exportProfiles = [
+  { id: 'youtube-4k', label: 'YouTube 4K', resolution: '3840x2160', bitrate: '35M', fps: 30 },
+  { id: 'instagram-reel', label: 'Instagram Reel', resolution: '1080x1920', bitrate: '12M', fps: 30 },
+  { id: 'tiktok', label: 'TikTok', resolution: '1080x1920', bitrate: '10M', fps: 30 },
+  { id: 'custom', label: 'Custom', resolution: 'custom', bitrate: 'custom', fps: 'custom' }
+];
+
+async function listProfiles(req, res) {
+  return res.json({ profiles: exportProfiles });
+}
+
 async function createRenderJob(req, res) {
-  const { projectId, profile = '4k-h264', fps = 30 } = req.body;
+  const { projectId, profile = 'youtube-4k', fps = 30 } = req.body;
+  const preset = exportProfiles.find((p) => p.id === profile) || exportProfiles[0];
   const job = renderQueue.enqueue({
     userId: req.user.userId,
     projectId,
     profile,
     fps,
-    resolution: profile.startsWith('4k') ? '3840x2160' : '1920x1080'
+    resolution: preset.resolution,
+    bitrate: preset.bitrate,
+    frames: req.body.frames || 240
   });
   return res.status(202).json({ job });
 }
@@ -25,4 +39,4 @@ async function listRenderJobs(req, res) {
   return res.json({ jobs });
 }
 
-module.exports = { createRenderJob, getRenderJob, listRenderJobs };
+module.exports = { createRenderJob, getRenderJob, listRenderJobs, listProfiles };

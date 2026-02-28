@@ -1,5 +1,7 @@
 import { createLayer } from './layerTypes';
 
+const BLEND_MODES = ['source-over', 'multiply', 'overlay', 'screen', 'soft-light', 'hard-light'];
+
 export default class LayerManager {
   constructor() {
     this.layers = [];
@@ -32,6 +34,19 @@ export default class LayerManager {
 
   setOpacity(id, opacity) {
     this.updateLayer(id, { opacity: Math.max(0, Math.min(1, opacity)) });
+  }
+
+  setBlendMode(id, blendMode) {
+    const safe = BLEND_MODES.includes(blendMode) ? blendMode : 'source-over';
+    this.updateLayer(id, { blendMode: safe });
+  }
+
+  setMask(id, maskConfig) {
+    this.updateLayer(id, { mask: maskConfig });
+  }
+
+  setClippingParent(id, parentLayerId) {
+    this.updateLayer(id, { clippingParentId: parentLayerId });
   }
 
   getRenderableAt(timeSec) {
