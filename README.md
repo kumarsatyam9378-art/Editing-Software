@@ -34,6 +34,9 @@ This repo now includes:
 - Guest-first flow (login/signup temporarily removed from UI)
 - Backend JWT/auth endpoints retained for future secure mode
 - Subscription plans API + Stripe checkout endpoint
+- Border marketplace categories with scrollable panel
+- CapCut-style video tools matrix panel
+- High-resolution still export (PNG/JPG/WebP presets incl. 4K/8K scaling)
 - Dark professional responsive UI
 
 ## Project Structure
@@ -91,3 +94,7 @@ npm run dev
 
 ## 100k LOC roadmap
 Detailed long-term plan in `ROADMAP_100K.md`.
+
+
+## Scope guard
+Monetization and AI generation are intentionally excluded in this iteration, per request.

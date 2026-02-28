@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import BorderMarketplace from '../components/BorderMarketplace';
 import CanvasPreview from '../components/CanvasPreview';
 import EffectsPanel from '../components/EffectsPanel';
 import InspectorPanel from '../components/InspectorPanel';
@@ -8,11 +9,13 @@ import Sidebar from '../components/Sidebar';
 import Timeline from '../components/Timeline';
 import Toolbar from '../components/Toolbar';
 import TopBar from '../components/TopBar';
+import VideoToolsPanel from '../components/VideoToolsPanel';
 import useEditorStore from '../hooks/useEditorStore';
 import api from '../services/api';
 import { removeGreenScreen, trimVideo } from '../utils/ffmpeg';
 import useEditorEngines from '../hooks/useEditorEngines';
 import { rippleDelete } from '../editor/timeline/AdvancedEdits';
+import { downloadBlob, exportPreviewElement } from '../editor/image/ImageExportEngine';
 
 export default function EditorPage() {
   const {
@@ -30,6 +33,8 @@ export default function EditorPage() {
   } = useEditorStore();
 
   const [previewUrl, setPreviewUrl] = useState('');
+  const [activeBorder, setActiveBorder] = useState(null);
+  const previewVideoRef = useRef(null);
   const engines = useEditorEngines({ fps: project.fps, duration });
   const [isSaving, setIsSaving] = useState(false);
   const [vfxBusy, setVfxBusy] = useState(false);
@@ -45,9 +50,12 @@ export default function EditorPage() {
   }, [engines.timeline, project.tracks]);
 
   useEffect(() => {
-    const dispose = engines.playback.onTick((time) => setPlayhead(time));
+    const dispose = engines.playback.onTick((time) => {
+      setPlayhead(time);
+      engines.audioScrub.scrubTo(time);
+    });
     return dispose;
-  }, [engines.playback, setPlayhead]);
+  }, [engines.playback, engines.audioScrub, setPlayhead]);
 
   useEffect(() => {
     if (isPlaying) engines.playback.play();
@@ -147,6 +155,12 @@ export default function EditorPage() {
     });
   };
 
+  const exportStill = async (preset, format) => {
+    if (!previewVideoRef.current) return;
+    const blob = await exportPreviewElement(previewVideoRef.current, { preset, format, quality: 0.95 });
+    downloadBlob(blob, `satyam-studio-${preset}.${format.split('/')[1]}`);
+  };
+
   const handleRippleDelete = () => {
     const firstTrack = project.tracks[0];
     const firstClip = firstTrack?.clips?.[0];
@@ -160,12 +174,13 @@ export default function EditorPage() {
     engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
       time: playhead,
       value: 1,
+      interpolation: 'bezier',
       easing: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 }
     });
     engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
       time: Math.min(duration, playhead + 1),
       value: 0.6,
-      easing: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 }
+      interpolation: 'linear'
     });
   };
 
@@ -197,7 +212,7 @@ export default function EditorPage() {
           <span>Render: {renderProgress}%</span>
         </div>
         <div className="editor-grid editor-grid--advanced">
-          <div>
+          <div className="panel-stack">
             <MediaLibrary onFileUpload={handleUpload} />
             <Toolbar
               onAddTextOverlay={() =>
@@ -212,12 +227,14 @@ export default function EditorPage() {
               }
               onApplyFilter={() => selectedClipId && updateClip(selectedClipId, { filter: 'cinematic-lut' })}
               onApplyTransition={() => selectedClipId && updateClip(selectedClipId, { transition: 'fade' })}
-              onCropSelected={() => selectedClipId && updateClip(selectedClipId, { crop: '16:9-safe' })}
+              onCropSelected={() => selectedClipId && updateClip(selectedClipId, { crop: '9:16' })}
             />
             <EffectsPanel onRemoveGreenScreen={handleGreenScreen} processing={vfxBusy} />
+            <BorderMarketplace onApplyBorder={setActiveBorder} />
           </div>
           <section className="preview-panel">
             <CanvasPreview />
+            {activeBorder && <p>Active border: {activeBorder.category} / {activeBorder.name}</p>}
             <PlaybackControls
               isPlaying={isPlaying}
               onPlayPause={togglePlayback}
@@ -228,14 +245,19 @@ export default function EditorPage() {
             <div className="editor-actions">
               <button type="button" onClick={handleQuickTrim}>Trim 0-5s</button>
               <button type="button" onClick={saveProject}>Cloud Save Project</button>
-              <button type="button" onClick={startExport}>Export 4K</button>
+              <button type="button" onClick={startExport}>Export 4K Video</button>
               <button type="button" onClick={handleRippleDelete}>Ripple Delete 1st Clip</button>
               <button type="button" onClick={setOpacityKeyframe}>Set Opacity Keyframes</button>
+              <button type="button" onClick={() => exportStill('4k', 'image/png')}>Save PNG 4K</button>
+              <button type="button" onClick={() => exportStill('8k', 'image/webp')}>Save WebP 8K</button>
             </div>
             <p>Background Render Progress: {renderProgress}%</p>
-            {previewUrl && <video src={previewUrl} controls className="trim-preview" />}
+            {previewUrl && <video ref={previewVideoRef} src={previewUrl} controls className="trim-preview" />}
           </section>
-          <InspectorPanel />
+          <div className="panel-stack">
+            <InspectorPanel />
+            <VideoToolsPanel />
+          </div>
         </div>
         <Timeline />
       </main>
