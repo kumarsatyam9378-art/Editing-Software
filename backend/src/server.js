@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const renderRoutes = require('./routes/renderRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/renders', renderRoutes);
 
 app.use((error, req, res, next) => {
   if (res.headersSent) {

@@ -11,6 +11,7 @@ import TopBar from '../components/TopBar';
 import useEditorStore from '../hooks/useEditorStore';
 import api from '../services/api';
 import { removeGreenScreen, trimVideo } from '../utils/ffmpeg';
+import useEditorEngines from '../hooks/useEditorEngines';
 
 export default function EditorPage() {
   const {
@@ -28,6 +29,7 @@ export default function EditorPage() {
   } = useEditorStore();
 
   const [previewUrl, setPreviewUrl] = useState('');
+  const engines = useEditorEngines({ fps: project.fps, duration });
   const [isSaving, setIsSaving] = useState(false);
   const [vfxBusy, setVfxBusy] = useState(false);
 
@@ -37,12 +39,22 @@ export default function EditorPage() {
   );
 
   useEffect(() => {
-    if (!isPlaying) return undefined;
-    const timer = setInterval(() => {
-      setPlayhead(Math.min(duration, playhead + 0.1));
-    }, 100);
-    return () => clearInterval(timer);
-  }, [isPlaying, playhead, setPlayhead, duration]);
+    engines.timeline.setTracks(project.tracks);
+  }, [engines.timeline, project.tracks]);
+
+  useEffect(() => {
+    const dispose = engines.playback.onTick((time) => setPlayhead(time));
+    return dispose;
+  }, [engines.playback, setPlayhead]);
+
+  useEffect(() => {
+    if (isPlaying) engines.playback.play();
+    else engines.playback.pause();
+  }, [isPlaying, engines.playback]);
+
+  useEffect(() => {
+    engines.playback.seek(playhead);
+  }, [playhead, engines.playback]);
 
   useEffect(() => {
     const id = setTimeout(async () => {
@@ -144,6 +156,7 @@ export default function EditorPage() {
             />
           </label>
           <span>{isSaving ? 'Autosaving...' : 'All changes saved'}</span>
+          <span>Engine: {engines.timeline.getAllClips().length} clips | Frame {engines.playback.getCurrentFrame()}</span>
         </div>
         <div className="editor-grid editor-grid--advanced">
           <div>

@@ -23,6 +23,8 @@ This repo now includes `frontend/vercel.json` rewrite to always serve `index.htm
 - WebGL preview scaffold
 - Autosave (project upsert endpoint)
 - 4K export job API stub
+- Modular editor engines (camera/matrix, timeline snap, layer manager, brush/shape/text, playback/frame cache)
+- Async render queue API (`/api/renders`) for export pipeline simulation
 - Login/signup with JWT
 - Subscription plans API + Stripe checkout endpoint
 - Dark professional responsive UI
@@ -77,3 +79,7 @@ A full parity product is a multi-year program. This template gives a strong base
 4. **Image/vector engine**: SVG parser, brush/eraser, typography controls.
 5. **Performance**: OffscreenCanvas, workerized pipelines, virtualized timeline.
 6. **Collaboration**: realtime comments, shared projects, audit trail.
+
+
+## 100k LOC roadmap
+Detailed plan in `ROADMAP_100K.md`.
