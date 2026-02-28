@@ -19,7 +19,7 @@ export default function useEditorEngines({ fps, duration }) {
     const camera = new Camera2D();
     const commands = new CommandStack(300);
     const layers = new LayerManager();
-    const timeline = new TimelineEngine();
+    const timeline = new TimelineEngine({ fps, durationFrames: Math.round(fps * duration) });
     const playback = new PlaybackEngine({ fps, duration });
     const brush = new BrushEngine();
     const shapes = new ShapeEngine();

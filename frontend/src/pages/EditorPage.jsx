@@ -41,6 +41,8 @@ export default function EditorPage() {
   const [vfxBusy, setVfxBusy] = useState(false);
   const [renderProgress, setRenderProgress] = useState(0);
 
+  const playheadFrame = Math.round(playhead * project.fps);
+
   const selectedClip = useMemo(
     () => project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === selectedClipId),
     [project, selectedClipId]
@@ -65,7 +67,8 @@ export default function EditorPage() {
 
   useEffect(() => {
     engines.playback.seek(playhead);
-  }, [playhead, engines.playback]);
+    engines.timeline.setPlayheadFrame(playheadFrame);
+  }, [playhead, playheadFrame, engines.playback, engines.timeline]);
 
   useEffect(() => {
     const off = engines.renderWorker.onEvent((event) => {
@@ -185,6 +188,31 @@ export default function EditorPage() {
     ]);
   };
 
+
+  const syncStoreFromTimeline = () => {
+    const timelineTracks = engines.timeline.getState().tracks;
+    timelineTracks.forEach((track) => {
+      track.clips.forEach((clip) => {
+        updateClip(clip.id, {
+          startFrame: clip.startFrame,
+          endFrame: clip.endFrame,
+          start: clip.startFrame / project.fps,
+          end: clip.endFrame / project.fps
+        });
+      });
+    });
+  };
+
+  const splitAtPlayhead = () => {
+    if (!selectedClipId) return;
+    engines.timeline.splitClip(selectedClipId, playheadFrame);
+    syncStoreFromTimeline();
+  };
+
+  const addMarkerAtPlayhead = () => {
+    engines.timeline.addMarker(playheadFrame, `M-${playheadFrame}`);
+  };
+
   const setOpacityKeyframe = () => {
     if (!selectedClipId) return;
     engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
@@ -226,6 +254,7 @@ export default function EditorPage() {
           <span>{isSaving ? 'Autosaving...' : 'All changes saved'}</span>
           <span>Engine: {engines.timeline.getAllClips().length} clips | Frame {engines.playback.getCurrentFrame()}</span>
           <span>Render: {renderProgress}%</span>
+          <span>Industrial Timeline: frame {playheadFrame}, markers {engines.timeline.getState().markers.length}</span>
         </div>
         <div className="editor-grid editor-grid--advanced">
           <div className="panel-stack">
@@ -267,6 +296,8 @@ export default function EditorPage() {
               <button type="button" onClick={() => exportStill('4k', 'image/png')}>Save PNG 4K</button>
               <button type="button" onClick={() => exportStill('8k', 'image/webp')}>Save WebP 8K</button>
               <button type="button" onClick={demoAudioMix}>Audio Mix Demo</button>
+              <button type="button" onClick={splitAtPlayhead}>Split @ Playhead(Frame)</button>
+              <button type="button" onClick={addMarkerAtPlayhead}>Add Marker</button>
             </div>
             <p>Background Render Progress: {renderProgress}%</p>
             {previewUrl && <video ref={previewVideoRef} src={previewUrl} controls className="trim-preview" />}

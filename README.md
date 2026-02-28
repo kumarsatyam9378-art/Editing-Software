@@ -43,6 +43,8 @@ This repo now includes:
 - GPU preview renderer upgraded with WebGL2 program + framebuffer blit path
 - RenderQueue emits websocket progress events for live export tracking
 - Backend video render engine scaffold (`videoRenderEngine`) with timeline composition plan + audio mixdown plan
+- Industrial timeline core modules added: frame-accurate state, interval tree, clip graph, snap/ripple engines, marker manager, history stack, serializer
+- Frame-based timeline operations in editor (playhead frame display, marker add, split at playhead)
 - Dark professional responsive UI
 
 ## Project Structure
