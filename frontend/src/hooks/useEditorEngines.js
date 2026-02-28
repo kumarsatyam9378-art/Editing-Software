@@ -8,6 +8,8 @@ import BrushEngine from '../editor/image/BrushEngine';
 import ShapeEngine from '../editor/image/ShapeEngine';
 import TextLayoutEngine from '../editor/image/TextLayoutEngine';
 import FrameCache from '../editor/video/FrameCache';
+import KeyframeEngine from '../editor/animation/KeyframeEngine';
+import RenderWorkerClient from '../editor/render/RenderWorkerClient';
 
 export default function useEditorEngines({ fps, duration }) {
   return useMemo(() => {
@@ -20,6 +22,8 @@ export default function useEditorEngines({ fps, duration }) {
     const shapes = new ShapeEngine();
     const text = new TextLayoutEngine();
     const frameCache = new FrameCache(240);
+    const keyframes = new KeyframeEngine();
+    const renderWorker = new RenderWorkerClient();
 
     return {
       camera,
@@ -30,7 +34,9 @@ export default function useEditorEngines({ fps, duration }) {
       brush,
       shapes,
       text,
-      frameCache
+      frameCache,
+      keyframes,
+      renderWorker
     };
   }, [fps, duration]);
 }

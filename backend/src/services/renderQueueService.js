@@ -1,3 +1,6 @@
+const path = require('path');
+const { Worker } = require('worker_threads');
+
 class RenderQueueService {
   constructor() {
     this.jobs = new Map();
@@ -14,26 +17,41 @@ class RenderQueueService {
       ...job
     };
     this.jobs.set(id, item);
-    setTimeout(() => this.simulateProgress(id), 250);
+    this.startWorker(id, { frames: job.frames || 240 });
     return item;
   }
 
-  simulateProgress(id) {
-    const job = this.jobs.get(id);
-    if (!job) return;
-    if (job.progress >= 100) {
-      job.status = 'completed';
-      job.outputUrl = `https://example-cdn.local/exports/${id}.mp4`;
-      job.updatedAt = new Date().toISOString();
-      this.jobs.set(id, job);
-      return;
-    }
+  startWorker(jobId, payload) {
+    const workerPath = path.resolve(__dirname, '../collab/workers/renderWorker.js');
+    const worker = new Worker(workerPath, { workerData: payload });
 
-    job.status = 'rendering';
-    job.progress = Math.min(100, job.progress + 20);
-    job.updatedAt = new Date().toISOString();
-    this.jobs.set(id, job);
-    setTimeout(() => this.simulateProgress(id), 300);
+    worker.on('message', (message) => {
+      const job = this.jobs.get(jobId);
+      if (!job) return;
+
+      if (message.type === 'progress') {
+        job.status = 'rendering';
+        job.progress = message.progress;
+      }
+
+      if (message.type === 'done') {
+        job.status = 'completed';
+        job.progress = 100;
+        job.outputUrl = message.outputUrl;
+      }
+
+      job.updatedAt = new Date().toISOString();
+      this.jobs.set(jobId, job);
+    });
+
+    worker.on('error', (error) => {
+      const job = this.jobs.get(jobId);
+      if (!job) return;
+      job.status = 'failed';
+      job.error = error.message;
+      job.updatedAt = new Date().toISOString();
+      this.jobs.set(jobId, job);
+    });
   }
 
   get(id) {

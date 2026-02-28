@@ -2,18 +2,23 @@
 
 Production-ready full-stack starter for a professional image + video editor SaaS.
 
-## Why your hosted site showed 404
-If you deploy a React SPA without rewrite rules, deep routes (`/login`, `/editor`, `/pricing`) can show `404 NOT_FOUND` on Vercel.
-This repo now includes `frontend/vercel.json` rewrite to always serve `index.html` for client-side routing.
+## Why 404 was happening on Vercel
+If you deploy monorepo root without explicit frontend build/output config, Vercel can return `404 NOT_FOUND`.
+This repo now includes:
+- `vercel.json` at root (build frontend + output `frontend/dist`)
+- SPA rewrite to `index.html`
+- `frontend/vercel.json` for frontend-only deployments
 
 ## Stack
-- Frontend: React + Vite + Zustand + FFmpeg.wasm + WebGL canvas
-- Backend: Node.js + Express + MongoDB + JWT auth + Stripe subscription API
+- Frontend: React + Vite + Zustand + FFmpeg.wasm + WebGL canvas + Worker render client
+- Backend: Node.js + Express + MongoDB + JWT auth + Stripe + WebSocket collaboration
 - Storage: S3-compatible upload URL endpoint (service abstraction)
 
 ## Features currently implemented
 - Multi-layer timeline model (`video`, `audio`, `text`, `overlay`)
 - Drag/drop clip movement across tracks
+- Advanced timeline edit scaffolds (ripple/slip/slide/roll/link/nested sequence models)
+- Keyframe animation foundation (per-property keyframes + bezier interpolation)
 - Clip inspector (trim range, speed, split, delete)
 - Text overlay insertion with animation metadata
 - Filter, transition, crop metadata controls
@@ -21,10 +26,11 @@ This repo now includes `frontend/vercel.json` rewrite to always serve `index.htm
 - Playback controls and playhead
 - FFmpeg trim + basic green-screen removal helper
 - WebGL preview scaffold
+- Worker-based render progress simulation (frontend)
 - Autosave (project upsert endpoint)
-- 4K export job API stub
-- Modular editor engines (camera/matrix, timeline snap, layer manager, brush/shape/text, playback/frame cache)
-- Async render queue API (`/api/renders`) for export pipeline simulation
+- Async render queue API (`/api/renders`) using worker_threads
+- Collaboration scaffolding: WebSocket presence + version history endpoints
+- Vector scaffolding: SVG path parser + path editing + boolean op placeholders
 - Login/signup with JWT
 - Subscription plans API + Stripe checkout endpoint
 - Dark professional responsive UI
@@ -33,9 +39,18 @@ This repo now includes `frontend/vercel.json` rewrite to always serve `index.htm
 
 ```
 hollywood-editor/
+├── vercel.json
 ├── frontend/
 │   ├── src/components
 │   ├── src/context
+│   ├── src/editor
+│   │   ├── animation
+│   │   ├── core
+│   │   ├── image
+│   │   ├── layers
+│   │   ├── render
+│   │   ├── timeline
+│   │   └── vector
 │   ├── src/hooks
 │   ├── src/pages
 │   ├── src/services
@@ -44,13 +59,15 @@ hollywood-editor/
 │   ├── src/webgl
 │   └── vercel.json
 └── backend/
+    ├── src/collab
     ├── src/config
     ├── src/controllers
     ├── src/middleware
     ├── src/models
     ├── src/routes
     ├── src/services
-    └── src/utils
+    ├── src/utils
+    └── src/ws
 ```
 
 ## Run
@@ -71,15 +88,5 @@ cp .env.example .env
 npm run dev
 ```
 
-## Realistic roadmap (to reach true CapCut/Canva/Premiere parity)
-A full parity product is a multi-year program. This template gives a strong base, then build phase-by-phase:
-1. **Core editor engine**: transform matrix, hit-testing, keyframes, blend modes.
-2. **Timeline engine**: snapping, ripple edits, grouped clips, nested sequences.
-3. **Rendering/export**: background workers, frame cache, server render queue.
-4. **Image/vector engine**: SVG parser, brush/eraser, typography controls.
-5. **Performance**: OffscreenCanvas, workerized pipelines, virtualized timeline.
-6. **Collaboration**: realtime comments, shared projects, audit trail.
-
-
 ## 100k LOC roadmap
-Detailed plan in `ROADMAP_100K.md`.
+Detailed long-term plan in `ROADMAP_100K.md`.

@@ -1,3 +1,4 @@
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -7,6 +8,8 @@ const projectRoutes = require('./routes/projectRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const renderRoutes = require('./routes/renderRoutes');
+const collabRoutes = require('./routes/collabRoutes');
+const attachCollabGateway = require('./ws/collabGateway');
 
 const app = express();
 
@@ -20,6 +23,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/renders', renderRoutes);
+app.use('/api/collab', collabRoutes);
 
 app.use((error, req, res, next) => {
   if (res.headersSent) {
@@ -30,7 +34,9 @@ app.use((error, req, res, next) => {
 
 connectDB(env.mongoUri)
   .then(() => {
-    app.listen(env.port, () => {
+    const server = http.createServer(app);
+    attachCollabGateway(server);
+    server.listen(env.port, () => {
       console.log(`Server running on port ${env.port}`);
     });
   })

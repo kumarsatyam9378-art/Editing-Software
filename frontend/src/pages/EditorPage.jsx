@@ -12,6 +12,7 @@ import useEditorStore from '../hooks/useEditorStore';
 import api from '../services/api';
 import { removeGreenScreen, trimVideo } from '../utils/ffmpeg';
 import useEditorEngines from '../hooks/useEditorEngines';
+import { rippleDelete } from '../editor/timeline/AdvancedEdits';
 
 export default function EditorPage() {
   const {
@@ -32,6 +33,7 @@ export default function EditorPage() {
   const engines = useEditorEngines({ fps: project.fps, duration });
   const [isSaving, setIsSaving] = useState(false);
   const [vfxBusy, setVfxBusy] = useState(false);
+  const [renderProgress, setRenderProgress] = useState(0);
 
   const selectedClip = useMemo(
     () => project.tracks.flatMap((track) => track.clips).find((clip) => clip.id === selectedClipId),
@@ -55,6 +57,18 @@ export default function EditorPage() {
   useEffect(() => {
     engines.playback.seek(playhead);
   }, [playhead, engines.playback]);
+
+  useEffect(() => {
+    const off = engines.renderWorker.onEvent((event) => {
+      if (event.type === 'progress') setRenderProgress(event.progress);
+      if (event.type === 'completed') setPreviewUrl(event.output);
+    });
+
+    return () => {
+      off();
+      engines.renderWorker.dispose();
+    };
+  }, [engines.renderWorker]);
 
   useEffect(() => {
     const id = setTimeout(async () => {
@@ -125,10 +139,33 @@ export default function EditorPage() {
   };
 
   const startExport = async () => {
+    engines.renderWorker.renderFrames({ frames: project.fps * duration, batch: 30 });
     await api.post('/projects/export', {
       projectName: project.name,
       target: '4k',
       codec: 'h264'
+    });
+  };
+
+  const handleRippleDelete = () => {
+    const firstTrack = project.tracks[0];
+    const firstClip = firstTrack?.clips?.[0];
+    if (!firstTrack || !firstClip) return;
+    const updatedTrack = rippleDelete(firstTrack, firstClip.id);
+    updatedTrack.clips.forEach((clip) => updateClip(clip.id, clip));
+  };
+
+  const setOpacityKeyframe = () => {
+    if (!selectedClipId) return;
+    engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
+      time: playhead,
+      value: 1,
+      easing: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 }
+    });
+    engines.keyframes.addKeyframe(selectedClipId, 'opacity', {
+      time: Math.min(duration, playhead + 1),
+      value: 0.6,
+      easing: { x1: 0.42, y1: 0, x2: 0.58, y2: 1 }
     });
   };
 
@@ -157,6 +194,7 @@ export default function EditorPage() {
           </label>
           <span>{isSaving ? 'Autosaving...' : 'All changes saved'}</span>
           <span>Engine: {engines.timeline.getAllClips().length} clips | Frame {engines.playback.getCurrentFrame()}</span>
+          <span>Render: {renderProgress}%</span>
         </div>
         <div className="editor-grid editor-grid--advanced">
           <div>
@@ -191,7 +229,10 @@ export default function EditorPage() {
               <button type="button" onClick={handleQuickTrim}>Trim 0-5s</button>
               <button type="button" onClick={saveProject}>Cloud Save Project</button>
               <button type="button" onClick={startExport}>Export 4K</button>
+              <button type="button" onClick={handleRippleDelete}>Ripple Delete 1st Clip</button>
+              <button type="button" onClick={setOpacityKeyframe}>Set Opacity Keyframes</button>
             </div>
+            <p>Background Render Progress: {renderProgress}%</p>
             {previewUrl && <video src={previewUrl} controls className="trim-preview" />}
           </section>
           <InspectorPanel />
