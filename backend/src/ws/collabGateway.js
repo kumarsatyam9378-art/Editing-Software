@@ -1,6 +1,7 @@
 const { WebSocketServer } = require('ws');
 const presence = require('../collab/PresenceService');
 const renderQueue = require('../services/renderQueueService');
+const renderFarm = require('../services/renderfarm/DistributedRenderFarm');
 
 function safeSend(ws, payload) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(payload));
@@ -19,6 +20,11 @@ function attachCollabGateway(server) {
   renderQueue.on('job', ({ type, job }) => {
     broadcast({ type: 'render-job', event: type, job, roomId: job.projectId }, job.projectId);
   });
+
+  renderFarm.on('job', ({ type, job }) => {
+    broadcast({ type: 'render-farm-job', event: type, job, roomId: job.projectId || null }, job.projectId || null);
+  });
+
 
   wss.on('connection', (ws) => {
     ws.roomId = null;

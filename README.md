@@ -45,6 +45,9 @@ This repo now includes:
 - Backend video render engine scaffold (`videoRenderEngine`) with timeline composition plan + audio mixdown plan
 - Industrial timeline core modules added: frame-accurate state, interval tree, clip graph, snap/ripple engines, marker manager, history stack, serializer
 - Frame-based timeline operations in editor (playhead frame display, marker add, split at playhead)
+- Distributed render-farm scaffolding: queue adapter, worker pool, retry policy, webhook notifier, farm API routes
+- GPU compositor scaffolding: shader registry, framebuffer pool, multi-pass manager, LUT/blur/base pass flow
+- Node-based animation graph engine (DAG): registry, dependency resolver, cycle detector, cache, serializer, spring/noise/math/output nodes
 - Dark professional responsive UI
 
 ## Project Structure

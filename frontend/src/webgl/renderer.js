@@ -1,3 +1,5 @@
+import GPUCompositor from './compositor/GPUCompositor';
+
 function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -21,7 +23,7 @@ void main(){
   gl_Position = vec4(a_pos,0.0,1.0);
 }`;
 
-const fragmentSource = `#version 300 es
+const baseFragment = `#version 300 es
 precision highp float;
 in vec2 v_uv;
 out vec4 outColor;
@@ -32,43 +34,57 @@ void main(){
   outColor = vec4(base * vignette, 1.0);
 }`;
 
+const blurFragment = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 outColor;
+uniform float u_blurAmount;
+void main(){
+  vec2 o = vec2(u_blurAmount * 0.002, 0.0);
+  vec4 c = vec4(0.0);
+  c += vec4(0.2) * vec4(v_uv,1.0,1.0);
+  c += vec4(0.2) * vec4(v_uv + o,1.0,1.0);
+  c += vec4(0.2) * vec4(v_uv - o,1.0,1.0);
+  c += vec4(0.2) * vec4(v_uv + o.yx,1.0,1.0);
+  c += vec4(0.2) * vec4(v_uv - o.yx,1.0,1.0);
+  outColor = c;
+}`;
+
+const lutFragment = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 outColor;
+uniform float u_lutStrength;
+void main(){
+  vec3 color = vec3(v_uv, 0.5);
+  vec3 graded = vec3(color.r * 0.95, color.g * 1.02, color.b * 1.08);
+  outColor = vec4(mix(color, graded, u_lutStrength), 1.0);
+}`;
+
 export function initRenderer(canvas) {
   const gl = canvas.getContext('webgl2');
   if (!gl) {
     throw new Error('WebGL2 not supported');
   }
 
-  const program = createProgram(gl, vertexSource, fragmentSource);
+  const program = createProgram(gl, vertexSource, baseFragment);
   const vao = gl.createVertexArray();
   const buffer = gl.createBuffer();
-  const fbo = gl.createFramebuffer();
 
   gl.bindVertexArray(vao);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    -1, -1,
-    1, -1,
-    -1, 1,
-    1, 1
-  ]), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
 
   const aPos = gl.getAttribLocation(program, 'a_pos');
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-  const uTime = gl.getUniformLocation(program, 'u_time');
+  const compositor = new GPUCompositor(gl, vao);
+  compositor.registerDefaultShaders(vertexSource, baseFragment, blurFragment, lutFragment);
 
-  function drawFrame(time = 0) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.useProgram(program);
-    gl.uniform1f(uTime, time * 0.001);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, fbo);
-    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
-    gl.blitFramebuffer(0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-  }
-
-  return { drawFrame };
+  return {
+    drawFrame(time = 0) {
+      compositor.composeFrame({ width: canvas.width, height: canvas.height, time: time * 0.001 });
+    }
+  };
 }

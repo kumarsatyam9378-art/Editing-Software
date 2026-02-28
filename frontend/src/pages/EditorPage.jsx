@@ -181,6 +181,32 @@ export default function EditorPage() {
     if (pack.luts) updateClip(selectedClipId, { lutPack: pack.id, lut: pack.luts[0] });
   };
 
+
+  const demoNodeAnimationGraph = () => {
+    const graph = engines.animationGraph;
+    graph.nodes.clear();
+
+    const time = graph.addNode('time');
+    const noise = graph.addNode('noise', { amplitude: 0.4, frequency: 0.09 });
+    const base = graph.addNode('constant', { value: 0.6 });
+    const add = graph.addNode('add');
+    const spring = graph.addNode('spring', { stiffness: 180, damping: 20, mass: 1 });
+    const clamp = graph.addNode('clamp', { min: 0, max: 1 });
+    const out = graph.addNode('output', { property: 'opacity' });
+
+    graph.connect(noise.id, 't', time.id, 'value');
+    graph.connect(add.id, 'a', base.id, 'value');
+    graph.connect(add.id, 'b', noise.id, 'value');
+    graph.connect(spring.id, 'target', add.id, 'value');
+    graph.connect(clamp.id, 'v', spring.id, 'value');
+    graph.connect(out.id, 'value', clamp.id, 'value');
+
+    const evaluated = graph.evaluate(playheadFrame, project.fps);
+    if (selectedClipId && evaluated.opacity != null) {
+      updateClip(selectedClipId, { opacity: Number(evaluated.opacity.toFixed(3)), animationGraph: graph.serialize() });
+    }
+  };
+
   const demoAudioMix = () => {
     const samples = new Float32Array(48000).map((_, i) => Math.sin((i / 48000) * Math.PI * 16));
     engines.audioMixer.mixdown([
@@ -296,6 +322,7 @@ export default function EditorPage() {
               <button type="button" onClick={() => exportStill('4k', 'image/png')}>Save PNG 4K</button>
               <button type="button" onClick={() => exportStill('8k', 'image/webp')}>Save WebP 8K</button>
               <button type="button" onClick={demoAudioMix}>Audio Mix Demo</button>
+              <button type="button" onClick={demoNodeAnimationGraph}>Node Animation Graph Demo</button>
               <button type="button" onClick={splitAtPlayhead}>Split @ Playhead(Frame)</button>
               <button type="button" onClick={addMarkerAtPlayhead}>Add Marker</button>
             </div>

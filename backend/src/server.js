@@ -10,6 +10,7 @@ const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const renderRoutes = require('./routes/renderRoutes');
 const collabRoutes = require('./routes/collabRoutes');
 const attachCollabGateway = require('./ws/collabGateway');
+const renderFarmRoutes = require('./routes/renderFarmRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/renders', renderRoutes);
 app.use('/api/collab', collabRoutes);
+app.use('/api/render-farm', renderFarmRoutes);
 
 app.use((error, req, res, next) => {
   if (res.headersSent) {
